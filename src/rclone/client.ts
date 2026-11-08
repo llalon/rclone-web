@@ -7,7 +7,7 @@ import createRCDClient, {
     type RCDPath,
 } from 'rclone-sdk'
 import { clearAuthSession, useStore } from '@/lib/store'
-import { rcBaseUrl, resolveUrlWithIngress } from '@/lib/url'
+import { resolveUrlWithIngress } from '@/lib/url'
 
 const TRANSLATABLE_PATHS = new Set(['/config/providers', '/options/info'])
 
@@ -59,7 +59,11 @@ function redirectToLogin() {
 }
 
 function resolveAuth({ url, user, pass }: { url: string; user: string; pass: string }) {
-    const normalizedUrl = url.trim().replace(/\/+$/, '')
+    // Under Home Assistant Ingress all RC endpoints are called below
+    // "<ingress path>/rc/", which nginx proxies to the daemon.
+    const normalizedUrl = window.__RCLONE_INGRESS_URL__
+        ? resolveUrlWithIngress('/rc')
+        : url.trim().replace(/\/+$/, '')
     const normalizedUser = user.trim()
 
     if (!normalizedUrl) {
@@ -75,7 +79,7 @@ function resolveAuth({ url, user, pass }: { url: string; user: string; pass: str
 
 function createClient({ url, user, pass }: { url: string; user: string; pass: string }) {
     return createRCDClient({
-        baseUrl: window.__RCLONE_INGRESS_URL__ ? rcBaseUrl() : url,
+        baseUrl: url,
         headers: user && pass ? { Authorization: `Basic ${btoa(`${user}:${pass}`)}` } : undefined,
     })
 }
@@ -161,10 +165,7 @@ export async function rcloneUploadFile({
         throwRcloneError('No rclone RC connection configured.')
     }
 
-    const url = new URL(
-        `${window.__RCLONE_INGRESS_URL__ ? rcBaseUrl() : auth.url.replace(/\/+$/, '')}/operations/uploadfile`,
-        window.location.origin
-    )
+    const url = new URL(`${auth.url}/operations/uploadfile`, window.location.origin)
     url.searchParams.set('fs', fs)
     url.searchParams.set('remote', remote)
 

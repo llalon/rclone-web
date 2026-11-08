@@ -8,9 +8,3 @@ export function resolveUrlWithIngress(url: string): string {
     const path = url.startsWith('/') ? url : `/${url}`
     return `${base.replace(/\/+$/, '')}${path}`
 }
-
-// Base URL of the rclone RC API. Under Ingress all RC endpoints are called
-// below "<ingress path>/rc/", which nginx proxies to the daemon.
-export function rcBaseUrl(): string {
-    return window.__RCLONE_INGRESS_RC_URL__ ?? resolveUrlWithIngress('/rc')
-}
