@@ -21,7 +21,7 @@ type PersistedStore = Pick<
 export const useStore = create<Store>()(
     persist(
         (): Store => ({
-            url: '',
+            url: window.__RCLONE_INGRESS_URL__ ?? '',
             user: '',
             pass: '',
             bannerDismissed: false,
@@ -32,6 +32,13 @@ export const useStore = create<Store>()(
         {
             name: 'lite-auth-store',
             storage: createJSONStorage<PersistedStore>(() => localStorage),
+            merge: (persistedState, currentState) => ({
+                ...currentState,
+                ...(persistedState as Partial<PersistedStore>),
+                url: window.__RCLONE_INGRESS_URL__ ?? '',
+                user: '',
+                pass: '',
+            }),
             partialize: ({
                 url,
                 user,
@@ -46,7 +53,6 @@ export const useStore = create<Store>()(
                 bannerDismissed,
                 language,
                 checkRemoteUsage,
-            }),
         }
     )
 )

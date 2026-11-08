@@ -65,6 +65,7 @@ function devRclone(): import('vite').Plugin {
 
 // https://vite.dev/config/
 export default defineConfig({
+    base: './',
     plugins: [react(), tailwindcss(), devRclone()],
     define: {
         APP_VERSION: JSON.stringify(pkg.version),
