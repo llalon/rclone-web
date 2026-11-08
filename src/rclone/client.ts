@@ -49,7 +49,8 @@ function redirectToLogin() {
     isRedirectingToLogin = true
     clearAuthSession()
 
-    if (window.location.pathname.endsWith('/login')) {
+    const loginUrl = resolveUrlWithIngress('/login')
+    if (window.location.pathname === loginUrl) {
         const searchParams = new URLSearchParams(window.location.search)
         searchParams.set('reason', 'auth')
         const search = searchParams.toString()
@@ -61,7 +62,7 @@ function redirectToLogin() {
         return
     }
 
-    window.location.replace(resolveUrlWithIngress('/login?reason=auth'))
+    window.location.replace(`${loginUrl}?reason=auth`)
 }
 
 function resolveAuth({ url, user, pass }: { url: string; user: string; pass: string }) {
