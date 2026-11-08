@@ -17,6 +17,7 @@ const navItems: { key: TranslationKey; to: string; end?: boolean }[] = [
     { key: 'nav.mounts', to: '/mounts' },
     { key: 'nav.serves', to: '/serves' },
     { key: 'nav.transfers', to: '/transfers' },
+    { key: 'nav.jobs', to: '/jobs' },
     { key: 'nav.settings', to: '/settings' },
 ]
 

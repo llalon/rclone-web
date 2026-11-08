@@ -441,3 +441,68 @@ export async function stopJob(jobid: number) {
         params: { query: { jobid } },
     })
 }
+
+export type RunningJobRow = {
+    id: number
+    startTime: string
+    elapsedSeconds: number
+    bytes: number
+    totalBytes: number
+    speed: number
+    progress: number | null
+}
+
+export async function fetchRunningJobs(): Promise<RunningJobRow[]> {
+    const listResponse = await rclone('/job/list')
+    const runningIds = Array.isArray(listResponse.runningIds) ? listResponse.runningIds : []
+    const allIds = Array.isArray(listResponse.jobids) ? listResponse.jobids : []
+    // Older rclone versions only return jobids (including finished jobs), so
+    // statuses are still checked below to keep only running jobs.
+    const candidateIds = runningIds.length > 0 ? runningIds : allIds
+
+    if (candidateIds.length === 0) {
+        return []
+    }
+
+    const [statusEntries, statsResponse] = await Promise.all([
+        Promise.all(
+            candidateIds.map(async (jobid) => [jobid, await fetchJobStatus(jobid)] as const)
+        ),
+        rclone('/core/stats'),
+    ])
+
+    const stats = normalizeJobGroupStats(statsResponse)
+    const now = Date.now()
+    const rows: RunningJobRow[] = []
+
+    for (const [jobid, status] of statusEntries) {
+        if (!status || status.finished) {
+            continue
+        }
+
+        const group = `job/${jobid}`
+        const transferring = stats.transferring.filter((item) => getText(item.group) === group)
+        const bytes = transferring.reduce((sum, item) => sum + getNumber(item.bytes), 0)
+        const totalBytes = transferring.reduce((sum, item) => sum + getNumber(item.size), 0)
+        const speed = transferring.reduce((sum, item) => sum + getNumber(item.speed), 0)
+        const startTimestamp = getTimestamp(status.startTime)
+
+        rows.push({
+            id: jobid,
+            startTime: status.startTime,
+            elapsedSeconds:
+                startTimestamp > 0
+                    ? Math.max(0, Math.round((now - startTimestamp) / 1000))
+                    : getNumber(status.duration),
+            bytes,
+            totalBytes,
+            speed,
+            progress:
+                totalBytes > 0
+                    ? Math.max(0, Math.min(100, Math.round((bytes / totalBytes) * 100)))
+                    : null,
+        })
+    }
+
+    return rows.sort((a, b) => getTimestamp(b.startTime) - getTimestamp(a.startTime) || a.id - b.id)
+}
