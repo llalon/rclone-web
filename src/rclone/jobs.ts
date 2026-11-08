@@ -464,27 +464,33 @@ export async function fetchRunningJobs(): Promise<RunningJobRow[]> {
         return []
     }
 
-    const [statusEntries, statsResponse] = await Promise.all([
-        Promise.all(
-            candidateIds.map(async (jobid) => [jobid, await fetchJobStatus(jobid)] as const)
-        ),
-        rclone('/core/stats'),
-    ])
+    const statusEntries = await Promise.all(
+        candidateIds.map(
+            async (jobid) =>
+                [
+                    jobid,
+                    await fetchJobStatus(jobid),
+                    // Group-filtered stats give stable per-job totals; summing the
+                    // global `transferring` array would bounce as files complete.
+                    normalizeJobGroupStats(
+                        await rclone('/core/stats', {
+                            params: { query: { group: `job/${jobid}` } },
+                        })
+                    ),
+                ] as const
+        )
+    )
 
-    const stats = normalizeJobGroupStats(statsResponse)
     const now = Date.now()
     const rows: RunningJobRow[] = []
 
-    for (const [jobid, status] of statusEntries) {
+    for (const [jobid, status, stats] of statusEntries) {
         if (!status || status.finished) {
             continue
         }
 
-        const group = `job/${jobid}`
-        const transferring = stats.transferring.filter((item) => getText(item.group) === group)
-        const bytes = transferring.reduce((sum, item) => sum + getNumber(item.bytes), 0)
-        const totalBytes = transferring.reduce((sum, item) => sum + getNumber(item.size), 0)
-        const speed = transferring.reduce((sum, item) => sum + getNumber(item.speed), 0)
+        const bytes = stats.bytes
+        const totalBytes = stats.totalBytes
         const startTimestamp = getTimestamp(status.startTime)
 
         rows.push({
@@ -496,7 +502,7 @@ export async function fetchRunningJobs(): Promise<RunningJobRow[]> {
                     : getNumber(status.duration),
             bytes,
             totalBytes,
-            speed,
+            speed: stats.speed,
             progress:
                 totalBytes > 0
                     ? Math.max(0, Math.min(100, Math.round((bytes / totalBytes) * 100)))
