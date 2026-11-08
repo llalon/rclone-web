@@ -74,6 +74,7 @@ import { formatBytes } from '@/lib/format'
 import { useT } from '@/lib/i18n'
 import { useStore } from '@/lib/store'
 import { cn } from '@/lib/ui'
+import { resolveUrlWithIngress } from '@/lib/url'
 import rclone, { rcloneAsync } from '@/rclone/client'
 import { fetchLocalUsage, fetchRemotesList, fetchRemoteUsage } from '@/rclone/usage'
 
@@ -193,9 +194,16 @@ function formatModTime(modTime: string | undefined): string {
 }
 
 function buildServeUrl(rcUrl: string, serveAddr: string): string {
-    const parsed = new URL(rcUrl.trim().replace(/\/+$/, ''))
     const portMatch = serveAddr.match(/:(\d+)$/)
     if (!portMatch) throw new Error('Could not parse serve address')
+
+    // Under Home Assistant Ingress the serve port only listens inside the
+    // add-on container, so downloads go through the nginx /serve/ proxy.
+    if (window.__RCLONE_INGRESS_URL__) {
+        return resolveUrlWithIngress(`/serve/${portMatch[1]}`)
+    }
+
+    const parsed = new URL(rcUrl.trim().replace(/\/+$/, ''))
     return `${parsed.protocol}//${parsed.hostname}:${portMatch[1]}`
 }
 
