@@ -9,6 +9,7 @@ import createRCDClient, {
     type RCDClient,
 } from 'rclone-sdk'
 import { clearAuthSession, useStore } from '@/lib/store'
+import { rcBaseUrl, resolveUrlWithIngress } from '@/lib/url'
 
 type InitParam<Init> =
     OpenApiRequiredKeysOf<Init> extends never
@@ -60,7 +61,7 @@ function redirectToLogin() {
         return
     }
 
-    window.location.replace(`${(window.__RCLONE_INGRESS_BASE__ ?? "").replace(/\/$/, "")}/login?reason=auth`)
+    window.location.replace(resolveUrlWithIngress('/login?reason=auth'))
 }
 
 function resolveAuth({ url, user, pass }: { url: string; user: string; pass: string }) {
@@ -80,7 +81,7 @@ function resolveAuth({ url, user, pass }: { url: string; user: string; pass: str
 
 function createClient({ url, user, pass }: { url: string; user: string; pass: string }) {
     return createRCDClient({
-        baseUrl: url,
+        baseUrl: window.__RCLONE_INGRESS_URL__ ? rcBaseUrl() : url,
         headers: user && pass ? { Authorization: `Basic ${btoa(`${user}:${pass}`)}` } : undefined,
     })
 }
@@ -166,7 +167,10 @@ export async function rcloneUploadFile({
         throwRcloneError('No rclone RC connection configured.')
     }
 
-    const url = new URL(`${auth.url.replace(/\/+$/, '')}/operations/uploadfile`)
+    const url = new URL(
+        `${window.__RCLONE_INGRESS_URL__ ? rcBaseUrl() : auth.url.replace(/\/+$/, '')}/operations/uploadfile`,
+        window.location.origin
+    )
     url.searchParams.set('fs', fs)
     url.searchParams.set('remote', remote)
 

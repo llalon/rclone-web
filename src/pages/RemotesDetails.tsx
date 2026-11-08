@@ -74,6 +74,7 @@ import { formatBytes } from '@/lib/format'
 import { useT } from '@/lib/i18n'
 import { useStore } from '@/lib/store'
 import { cn } from '@/lib/ui'
+import { rcBaseUrl } from '@/lib/url'
 import rclone, { rcloneAsync } from '@/rclone/client'
 import { fetchLocalUsage, fetchRemotesList, fetchRemoteUsage } from '@/rclone/usage'
 
@@ -192,11 +193,10 @@ function formatModTime(modTime: string | undefined): string {
     }
 }
 
-function buildServeUrl(rcUrl: string, serveAddr: string): string {
-    const parsed = new URL(rcUrl.trim().replace(/\/+$/, ''))
+function buildServeUrl(serveAddr: string): string {
     const portMatch = serveAddr.match(/:(\d+)$/)
     if (!portMatch) throw new Error('Could not parse serve address')
-    return `${parsed.protocol}//${parsed.hostname}:${portMatch[1]}`
+    return `${window.location.protocol}//${window.location.hostname}:${portMatch[1]}`
 }
 
 type ListItem = {
@@ -426,7 +426,9 @@ export function RemotesDetailsPage() {
             files: File[]
         }) => {
             const { url, user, pass } = useStore.getState()
-            const baseUrl = url.trim().replace(/\/+$/, '')
+            const baseUrl = window.__RCLONE_INGRESS_URL__
+                ? rcBaseUrl()
+                : url.trim().replace(/\/+$/, '')
             const params = new URLSearchParams({
                 fs,
                 remote: currentPath,
@@ -488,8 +490,7 @@ export function RemotesDetailsPage() {
             const { id: serveId, addr: serveAddr } = result
 
             try {
-                const { url } = useStore.getState()
-                const serveBaseUrl = buildServeUrl(url, serveAddr)
+                const serveBaseUrl = buildServeUrl(serveAddr)
 
                 const downloadUrl = isDir
                     ? `${serveBaseUrl}/${path}/?download=zip`
