@@ -92,7 +92,7 @@ export function App() {
         longPressFiredRef.current = false
         longPressTimerRef.current = window.setTimeout(() => {
             longPressFiredRef.current = true
-            const el = document.querySelector<HTMLImageElement>('header img[src="/icon.svg"]')
+            const el = document.querySelector<HTMLImageElement>('header img[src="icon.svg"]')
             if (el) {
                 el.style.transition = 'transform 0.5s cubic-bezier(0.22, 1, 0.36, 1)'
                 el.style.transform = 'rotate(360deg)'
@@ -133,7 +133,7 @@ export function App() {
                     <img
                         alt=""
                         className="size-6 select-none"
-                        src="/icon.svg"
+                        src="icon.svg"
                         draggable={false}
                         onPointerDown={startLongPress}
                         onPointerUp={cancelLongPress}

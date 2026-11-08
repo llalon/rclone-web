@@ -76,4 +76,4 @@ export const router = createBrowserRouter([
             },
         ],
     },
-])
+], { basename: window.__RCLONE_INGRESS_BASE__ ?? '/' })

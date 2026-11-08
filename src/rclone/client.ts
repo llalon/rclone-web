@@ -48,7 +48,7 @@ function redirectToLogin() {
     isRedirectingToLogin = true
     clearAuthSession()
 
-    if (window.location.pathname === '/login') {
+    if (window.location.pathname.endsWith('/login')) {
         const searchParams = new URLSearchParams(window.location.search)
         searchParams.set('reason', 'auth')
         const search = searchParams.toString()
@@ -60,7 +60,7 @@ function redirectToLogin() {
         return
     }
 
-    window.location.replace('/login?reason=auth')
+    window.location.replace(`${(window.__RCLONE_INGRESS_BASE__ ?? "").replace(/\/$/, "")}/login?reason=auth`)
 }
 
 function resolveAuth({ url, user, pass }: { url: string; user: string; pass: string }) {
@@ -166,7 +166,7 @@ export async function rcloneUploadFile({
         throwRcloneError('No rclone RC connection configured.')
     }
 
-    const url = new URL(auth.url.replace(/^\//, ''), '/operations/uploadfile')
+    const url = new URL(`${auth.url.replace(/\/+$/, '')}/operations/uploadfile`)
     url.searchParams.set('fs', fs)
     url.searchParams.set('remote', remote)
 
