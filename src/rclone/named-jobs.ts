@@ -1,6 +1,7 @@
 import { resolveUrlWithIngress } from '@/lib/url'
 
 export type NamedJob = {
+    running_job_ids?: number[]
     name: string
     schedule: string
     payload: { command: string; command_args?: Record<string, unknown> }

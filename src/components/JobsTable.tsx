@@ -11,194 +11,170 @@ import {
 } from '@/components/ui/table'
 import { formatBytes, formatDuration, formatTime } from '@/lib/format'
 import { useT } from '@/lib/i18n'
-import { cn } from '@/lib/ui'
 import type { RunningJobRow } from '@/rclone/jobs'
+import type { NamedJob } from '@/rclone/named-jobs'
 
-const columnWidths = {
-    id: 'w-[80px]',
-    status: 'w-[112px]',
-    started: 'w-[200px]',
-    duration: 'w-[120px]',
-    progress: 'w-[220px]',
-    speed: 'w-[100px]',
-    actions: 'w-[80px]',
-} as const
+export type JobDisplayRow = {
+    key: string
+    definition?: NamedJob
+    runs: RunningJobRow[]
+}
 
 export function JobsTable({
     jobs,
+    onRun,
     onStop,
-    isStopping,
+    onEdit,
+    onDelete,
+    isBusy,
+    canRun,
+    queued,
 }: {
-    jobs: RunningJobRow[]
-    onStop: (jobid: number) => void
-    isStopping: boolean
+    jobs: JobDisplayRow[]
+    onRun: (job: NamedJob) => void
+    onStop: (job: JobDisplayRow) => void
+    onEdit: (job: NamedJob) => void
+    onDelete: (job: NamedJob) => void
+    isBusy: boolean
+    canRun: boolean
+    queued: Record<string, number>
 }) {
     const t = useT()
     return (
         <div className="overflow-hidden rounded-xl border">
-            <Table className="min-w-[912px] table-fixed text-xs">
+            <Table className="min-w-[1050px] text-xs">
                 <TableHeader className="bg-muted/40">
-                    <TableRow className="hover:bg-muted/40">
-                        <TableHead
-                            className={cn(
-                                columnWidths.id,
-                                'h-9 px-2 text-left font-semibold text-muted-foreground'
-                            )}
-                        >
-                            {t('jobsTable.id')}
-                        </TableHead>
-                        <TableHead
-                            className={cn(
-                                columnWidths.status,
-                                'h-9 px-2 text-left font-semibold text-muted-foreground'
-                            )}
-                        >
-                            {t('transfersTable.status')}
-                        </TableHead>
-                        <TableHead
-                            className={cn(
-                                columnWidths.started,
-                                'h-9 px-2 text-left font-semibold text-muted-foreground'
-                            )}
-                        >
-                            {t('jobsTable.started')}
-                        </TableHead>
-                        <TableHead
-                            className={cn(
-                                columnWidths.duration,
-                                'h-9 px-2 text-left font-semibold text-muted-foreground'
-                            )}
-                        >
-                            {t('jobsTable.duration')}
-                        </TableHead>
-                        <TableHead
-                            className={cn(
-                                columnWidths.progress,
-                                'h-9 px-2 text-left font-semibold text-muted-foreground'
-                            )}
-                        >
-                            {t('transfersTable.progress')}
-                        </TableHead>
-                        <TableHead
-                            className={cn(
-                                columnWidths.speed,
-                                'h-9 px-2 text-left font-semibold text-muted-foreground'
-                            )}
-                        >
-                            {t('transfersTable.speed')}
-                        </TableHead>
-                        <TableHead
-                            className={cn(
-                                columnWidths.actions,
-                                'h-9 px-2 text-left font-semibold text-muted-foreground'
-                            )}
-                        >
-                            {t('transfersTable.actions')}
-                        </TableHead>
+                    <TableRow>
+                        <TableHead className="w-[240px]">Job</TableHead>
+                        <TableHead>{t('transfersTable.status')}</TableHead>
+                        <TableHead>{t('jobsTable.started')}</TableHead>
+                        <TableHead>{t('jobsTable.duration')}</TableHead>
+                        <TableHead className="w-[220px]">{t('transfersTable.progress')}</TableHead>
+                        <TableHead>{t('transfersTable.speed')}</TableHead>
+                        <TableHead>{t('transfersTable.actions')}</TableHead>
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {jobs.map((job) => (
-                        <TableRow key={job.id} className="hover:bg-muted/20">
-                            <TableCell
-                                className={cn(
-                                    columnWidths.id,
-                                    'px-2 py-1.5 text-left font-mono font-medium text-muted-foreground tabular-nums align-middle'
-                                )}
-                            >
-                                #{job.id}
-                            </TableCell>
-
-                            <TableCell
-                                className={cn(
-                                    columnWidths.status,
-                                    'px-2 py-1.5 text-left align-middle'
-                                )}
-                            >
-                                <div className="flex justify-start">
+                    {jobs.map((row) => {
+                        const job = row.definition
+                        const running = row.runs.length > 0
+                        const waiting = Boolean(job && queued[job.name] > Date.now() && !running)
+                        const bytes = row.runs.reduce((sum, run) => sum + run.bytes, 0)
+                        const total = row.runs.reduce((sum, run) => sum + run.totalBytes, 0)
+                        const speed = row.runs.reduce((sum, run) => sum + run.speed, 0)
+                        const progress =
+                            total > 0 ? Math.min(100, Math.round((bytes / total) * 100)) : null
+                        const latest = row.runs[0]
+                        return (
+                            <TableRow key={row.key}>
+                                <TableCell className="max-w-[280px] whitespace-normal">
+                                    <h3 className="font-medium break-all">
+                                        {job?.name ?? `Job #${latest.id}`}
+                                    </h3>
+                                    {job && (
+                                        <>
+                                            <p className="font-mono text-muted-foreground break-all">
+                                                {job.schedule || 'Manual only'}
+                                            </p>
+                                            <p className="text-muted-foreground">
+                                                {job.payload.command}
+                                            </p>
+                                        </>
+                                    )}
+                                    {running && (
+                                        <p className="text-muted-foreground">
+                                            {row.runs.map((run) => `#${run.id}`).join(', ')}
+                                        </p>
+                                    )}
+                                </TableCell>
+                                <TableCell>
                                     <Badge
-                                        className="h-6 gap-1 px-1.5 text-xs tracking-wide bg-emerald-500/15 text-emerald-500"
                                         variant="secondary"
+                                        className={
+                                            running ? 'bg-emerald-500/15 text-emerald-500' : ''
+                                        }
                                     >
-                                        <RefreshCwIcon className="size-3.5 animate-spin" />
-                                        {t('transfersTable.running')}
+                                        {running && (
+                                            <RefreshCwIcon className="size-3.5 animate-spin" />
+                                        )}
+                                        {running
+                                            ? t('transfersTable.running')
+                                            : waiting
+                                              ? 'Queued'
+                                              : 'Stopped'}
                                     </Badge>
-                                </div>
-                            </TableCell>
-
-                            <TableCell
-                                className={cn(
-                                    columnWidths.started,
-                                    'px-2 py-1.5 text-left font-medium tabular-nums align-middle'
-                                )}
-                            >
-                                {formatTime(job.startTime)}
-                            </TableCell>
-
-                            <TableCell
-                                className={cn(
-                                    columnWidths.duration,
-                                    'px-2 py-1.5 text-left font-medium tabular-nums align-middle'
-                                )}
-                            >
-                                {formatDuration(job.elapsedSeconds)}
-                            </TableCell>
-
-                            <TableCell
-                                className={cn(
-                                    columnWidths.progress,
-                                    'px-2 py-1.5 text-left align-middle'
-                                )}
-                            >
-                                {job.progress === null ? (
-                                    <span className="text-muted-foreground">—</span>
-                                ) : (
-                                    <div className="w-full max-w-[204px] space-y-1">
-                                        <div className="flex items-center justify-between gap-2 tabular-nums">
-                                            <span className="font-medium">{job.progress}%</span>
-                                            <span className="text-muted-foreground">
-                                                {formatBytes(job.bytes)} /{' '}
-                                                {formatBytes(job.totalBytes)}
-                                            </span>
+                                </TableCell>
+                                <TableCell className="tabular-nums">
+                                    {latest ? formatTime(latest.startTime) : '—'}
+                                </TableCell>
+                                <TableCell className="tabular-nums">
+                                    {latest
+                                        ? formatDuration(
+                                              Math.max(...row.runs.map((run) => run.elapsedSeconds))
+                                          )
+                                        : '—'}
+                                </TableCell>
+                                <TableCell>
+                                    {progress === null ? (
+                                        '—'
+                                    ) : (
+                                        <div className="space-y-1">
+                                            <div className="flex justify-between gap-2 tabular-nums">
+                                                <span>{progress}%</span>
+                                                <span className="text-muted-foreground">
+                                                    {formatBytes(bytes)} / {formatBytes(total)}
+                                                </span>
+                                            </div>
+                                            <div className="h-1 overflow-hidden rounded-full bg-muted">
+                                                <div
+                                                    className="h-full bg-emerald-500 transition-all"
+                                                    style={{ width: `${progress}%` }}
+                                                />
+                                            </div>
                                         </div>
-                                        <div className="h-1 overflow-hidden rounded-full bg-muted">
-                                            <div
-                                                className="h-full rounded-full transition-all bg-emerald-500"
-                                                style={{ width: `${job.progress}%` }}
-                                            />
-                                        </div>
+                                    )}
+                                </TableCell>
+                                <TableCell className="tabular-nums">
+                                    {speed > 0 ? `${formatBytes(speed)}/s` : '—'}
+                                </TableCell>
+                                <TableCell>
+                                    <div className="flex gap-2">
+                                        <Button
+                                            size="xs"
+                                            variant={running ? 'destructive' : 'outline'}
+                                            disabled={isBusy || (!running && (!canRun || waiting))}
+                                            onClick={() => {
+                                                if (running) onStop(row)
+                                                else if (job) onRun(job)
+                                            }}
+                                        >
+                                            {running ? t('common.stop') : 'Run'}
+                                        </Button>
+                                        {job && (
+                                            <>
+                                                <Button
+                                                    size="xs"
+                                                    variant="outline"
+                                                    disabled={isBusy}
+                                                    onClick={() => onEdit(job)}
+                                                >
+                                                    Edit
+                                                </Button>
+                                                <Button
+                                                    size="xs"
+                                                    variant="destructive"
+                                                    disabled={isBusy}
+                                                    onClick={() => onDelete(job)}
+                                                >
+                                                    Delete
+                                                </Button>
+                                            </>
+                                        )}
                                     </div>
-                                )}
-                            </TableCell>
-
-                            <TableCell
-                                className={cn(
-                                    columnWidths.speed,
-                                    'px-2 py-1.5 text-left font-medium tabular-nums align-middle'
-                                )}
-                            >
-                                {job.speed > 0 ? `${formatBytes(job.speed)}/s` : '—'}
-                            </TableCell>
-
-                            <TableCell
-                                className={cn(
-                                    columnWidths.actions,
-                                    'px-2 py-1.5 text-left align-middle'
-                                )}
-                            >
-                                <div className="flex justify-start">
-                                    <Button
-                                        size="xs"
-                                        variant="destructive"
-                                        disabled={isStopping}
-                                        onClick={() => onStop(job.id)}
-                                    >
-                                        {t('common.stop')}
-                                    </Button>
-                                </div>
-                            </TableCell>
-                        </TableRow>
-                    ))}
+                                </TableCell>
+                            </TableRow>
+                        )
+                    })}
                 </TableBody>
             </Table>
         </div>
