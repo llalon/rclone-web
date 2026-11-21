@@ -36,6 +36,8 @@ export const useStore = create<Store>()(
                 ...currentState,
                 ...(persistedState as Partial<PersistedStore>),
                 url: window.__RCLONE_INGRESS_URL__ ?? '',
+                user: '',
+                pass: '',
             }),
             partialize: ({
                 url,
@@ -51,6 +53,7 @@ export const useStore = create<Store>()(
                 bannerDismissed,
                 language,
                 checkRemoteUsage,
+            }),
         }
     )
 )

@@ -475,7 +475,7 @@ export async function fetchRunningJobs(): Promise<RunningJobRow[]> {
                     // global `transferring` array would bounce as files complete.
                     normalizeJobGroupStats(
                         await rclone('/core/stats', {
-                            params: { query: { group: `job/${jobid}` } },
+                            body: { group: `job/${jobid}` },
                         })
                     ),
                 ] as const
