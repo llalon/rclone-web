@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { ListChecksIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { JobsTable } from '@/components/JobsTable'
+import { NamedJobs } from '@/components/NamedJobs'
 import { PageContent } from '@/components/PageContent'
 import { PageHeader } from '@/components/PageHeader'
 import { PageWrapper } from '@/components/PageWrapper'
@@ -48,6 +49,8 @@ export function JobsPage() {
                 }
             />
             <PageContent>
+                <NamedJobs />
+                <h2 className="text-lg font-semibold">Running jobs</h2>
                 {jobsQuery.isPending ? (
                     <div className="flex items-center justify-center px-6 py-14">
                         <Spinner className="size-8" />

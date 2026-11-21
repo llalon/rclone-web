@@ -49,33 +49,36 @@ function LoginGate() {
     return <LoginPage />
 }
 
-export const router = createBrowserRouter([
-    {
-        path: '/login',
-        element: <LoginGate />,
-    },
-    {
-        element: <AuthGate />,
-        children: [
-            {
-                path: '/',
-                element: <App />,
-                children: [
-                    { index: true, element: <DashboardPage /> },
-                    { path: 'remotes', element: <RemotesPage /> },
-                    { path: 'remotes/new', element: <RemotesNewPage /> },
-                    { path: 'remotes/:remoteName', element: <RemotesDetailsPage /> },
-                    { path: 'local', element: <RemotesDetailsPage /> },
-                    { path: 'remotes/:remoteName/edit', element: <RemotesEditPage /> },
-                    { path: 'mounts', element: <MountsPage /> },
-                    { path: 'mounts/new', element: <MountsNewPage /> },
-                    { path: 'serves', element: <ServesPage /> },
-                    { path: 'serves/new', element: <ServesNewPage /> },
-                    { path: 'transfers', element: <TransfersPage /> },
-                    { path: 'jobs', element: <JobsPage /> },
-                    { path: 'settings', element: <SettingsPage /> },
-                ],
-            },
-        ],
-    },
-], { basename: window.__RCLONE_INGRESS_BASE__ ?? '/' })
+export const router = createBrowserRouter(
+    [
+        {
+            path: '/login',
+            element: <LoginGate />,
+        },
+        {
+            element: <AuthGate />,
+            children: [
+                {
+                    path: '/',
+                    element: <App />,
+                    children: [
+                        { index: true, element: <DashboardPage /> },
+                        { path: 'remotes', element: <RemotesPage /> },
+                        { path: 'remotes/new', element: <RemotesNewPage /> },
+                        { path: 'remotes/:remoteName', element: <RemotesDetailsPage /> },
+                        { path: 'local', element: <RemotesDetailsPage /> },
+                        { path: 'remotes/:remoteName/edit', element: <RemotesEditPage /> },
+                        { path: 'mounts', element: <MountsPage /> },
+                        { path: 'mounts/new', element: <MountsNewPage /> },
+                        { path: 'serves', element: <ServesPage /> },
+                        { path: 'serves/new', element: <ServesNewPage /> },
+                        { path: 'transfers', element: <TransfersPage /> },
+                        { path: 'jobs', element: <JobsPage /> },
+                        { path: 'settings', element: <SettingsPage /> },
+                    ],
+                },
+            ],
+        },
+    ],
+    { basename: window.__RCLONE_INGRESS_BASE__ ?? '/' }
+)

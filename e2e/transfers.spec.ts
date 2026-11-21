@@ -28,13 +28,6 @@ async function mockRc(
     responses: { transferring?: unknown[]; transferred?: unknown[] },
     onRequest?: (url: URL, body: Record<string, unknown> | null) => void
 ) {
-    await page.addInitScript((url) => {
-        localStorage.setItem(
-            'lite-auth-store',
-            JSON.stringify({ state: { url, user: 'fixture', pass: 'fixture' }, version: 0 })
-        )
-    }, rcUrl)
-
     await page.route(`${rcUrl}/**`, async (route) => {
         const url = new URL(route.request().url())
         onRequest?.(url, route.request().postDataJSON())
@@ -59,7 +52,8 @@ test('sorts running first, then failed, then finished newest first', async ({ pa
             file('unknown-time.bin', 'invalid'),
         ],
     })
-    await page.goto(getTestEnv().appUrl + '/transfers')
+    await page.goto(loginUrl({ url: rcUrl, user: 'fixture', pass: 'fixture' }))
+    await page.getByRole('link', { name: 'Transfers', exact: true }).click()
 
     const rows = page.locator('tbody tr')
     await expect(rows).toHaveCount(6)
@@ -84,7 +78,8 @@ test('stop sends the job id', async ({ page }) => {
             stoppedJob = body?.jobid
         }
     })
-    await page.goto(getTestEnv().appUrl + '/transfers')
+    await page.goto(loginUrl({ url: rcUrl, user: 'fixture', pass: 'fixture' }))
+    await page.getByRole('link', { name: 'Transfers', exact: true }).click()
 
     await page.getByRole('button', { name: 'Stop', exact: true }).click()
     await expect.poll(() => stoppedJob).toBe(7)
@@ -98,7 +93,8 @@ test('long paths keep their beginning and filename as the table resizes', async 
         'short.txt',
     ]
     await mockRc(page, { transferring: names.map(running) })
-    await page.goto(getTestEnv().appUrl + '/transfers')
+    await page.goto(loginUrl({ url: rcUrl, user: 'fixture', pass: 'fixture' }))
+    await page.getByRole('link', { name: 'Transfers', exact: true }).click()
 
     const labels = names.map((name) =>
         page.locator('tbody').getByTitle('Source:' + name, { exact: true })
@@ -157,7 +153,9 @@ test.describe('copy to another folder', () => {
         const { appUrl } = getTestEnv()
         await page.goto(loginUrl())
         await page.waitForURL(appUrl + '/')
-        await page.goto(appUrl + '/remotes/test-transfer-src?path=inbox')
+        await page.getByRole('link', { name: 'Remotes', exact: true }).click()
+        await page.getByRole('link', { name: 'test-transfer-src', exact: true }).click()
+        await page.getByRole('button', { name: 'inbox', exact: true }).click()
 
         await page.getByRole('button', { name: 'Transfer report.txt' }).click()
         await page.getByRole('link', { name: 'test-transfer-dst', exact: true }).click()

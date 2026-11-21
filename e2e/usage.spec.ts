@@ -24,7 +24,7 @@ async function openRemotesPage(page: Page) {
     const { appUrl } = getTestEnv()
     await page.goto(loginUrl())
     await page.waitForURL(appUrl + '/')
-    await page.goto(appUrl + '/remotes')
+    await page.getByRole('link', { name: 'Remotes', exact: true }).click()
     const row = page
         .getByRole('row')
         .filter({ has: page.getByRole('link', { name: 'test-usage' }) })

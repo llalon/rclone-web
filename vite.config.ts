@@ -70,6 +70,9 @@ export default defineConfig({
     define: {
         APP_VERSION: JSON.stringify(pkg.version),
     },
+    server: {
+        proxy: { '/api': { target: 'http://127.0.0.1:5573' } },
+    },
     // server: {
     //     proxy: {
     //         '/rc': {
