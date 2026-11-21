@@ -68,7 +68,7 @@ export function NamedJobs() {
             if (action.type === 'delete') setDeleting(null)
             toast.success(
                 action.type === 'run'
-                    ? 'Job queued via MQTT'
+                    ? 'Job queued'
                     : action.type === 'delete'
                       ? 'Job deleted'
                       : 'Job saved'

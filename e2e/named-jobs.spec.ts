@@ -41,7 +41,7 @@ test('creates, edits, triggers, and deletes a named job', async ({ page }) => {
     await expect(page.getByRole('heading', { name: 'Documents Backup' })).toBeVisible()
     expect(jobs[0].schedule).toBe('0 3 * * *')
     await page.getByRole('button', { name: 'Run', exact: true }).click()
-    await expect(page.getByText('Job queued via MQTT')).toBeVisible()
+    await expect(page.getByText('Job queued')).toBeVisible()
     expect(runs).toBe(1)
     await page.getByRole('button', { name: 'Edit', exact: true }).click()
     await expect(page.getByLabel('Name', { exact: true })).toBeDisabled()

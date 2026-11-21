@@ -69,7 +69,7 @@ export function JobsTable({
                             <TableRow key={row.key}>
                                 <TableCell className="max-w-[280px] whitespace-normal">
                                     <h3 className="font-medium break-all">
-                                        {job?.name ?? `Job #${latest.id}`}
+                                        {job?.name ?? 'Running job'}
                                     </h3>
                                     {job && (
                                         <>
@@ -80,11 +80,6 @@ export function JobsTable({
                                                 {job.payload.command}
                                             </p>
                                         </>
-                                    )}
-                                    {running && (
-                                        <p className="text-muted-foreground">
-                                            {row.runs.map((run) => `#${run.id}`).join(', ')}
-                                        </p>
                                     )}
                                 </TableCell>
                                 <TableCell>
